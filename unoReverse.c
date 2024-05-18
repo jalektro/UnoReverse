@@ -21,7 +21,7 @@ void OSCleanup( void )
     WSACleanup();
 }
 #define perror(string) fprintf( stderr, string ": WSA errno = %d\n", WSAGetLastError() )
-#else
+#else 
 #include <sys/socket.h> //for sockaddr, socket, socket
 	#include <sys/types.h> //for size_t
 	#include <netdb.h> //for getaddrinfo
@@ -46,7 +46,6 @@ struct ThreadArgs {
     char client_address_str[INET6_ADDRSTRLEN];
 };
 
-
 int initServer();
 int init_HTTP_client();
 int connectClient(int server_socket, char *client_address_str, int client_addr_str_size);
@@ -54,14 +53,13 @@ void getRequest(const char *client_address_str, FILE *log_file, char *thread_id_
 void sendData(int client_socket, FILE *file_ptr, char *client_address_str);
 void cleanup(int client_socket);
 void* threadExecution(void* arg);
+int openingFile(FILE *filepointer);
+
 
 int main() {
-    FILE *file_ptr = fopen("log.log", "a");
-	if (file_ptr == NULL)
-	{
-		perror("error opening file\n");
-	return 1;
-	}
+	FILE* file_ptr = fopen("log.log", "a"); // no clean code but works for me.fault checking is inside next function but here i have file_ptr pointed to the right location. 
+	openingFile(file_ptr); 
+	fclose(file_ptr);
 	
 	 OSInit();
 	 
@@ -72,7 +70,7 @@ int main() {
 
     int client_socket = connectClient(server_socket, client_address_str, sizeof(client_address_str));	
 	
-     //  nog niet nodig : inet_ntop(client_addr.ss_family, &((struct sockaddr_in*)&client_addr)->sin_addr, client_address_str, INET6_ADDRSTRLEN);
+    //  nog niet nodig : inet_ntop(client_addr.ss_family, &((struct sockaddr_in*)&client_addr)->sin_addr, client_address_str, INET6_ADDRSTRLEN);
 
     pthread_t thread;
 	
@@ -96,7 +94,7 @@ int main() {
 	cleanup(server_socket);
 	
 	OSCleanup();
-	
+	printf("server stopped\n");
     return 0;
 }
 
@@ -235,7 +233,6 @@ int connectClient(int server_socket, char *client_address_str, int client_addres
 			struct sockaddr_in* s = (struct sockaddr_in*)&client_addr;
             inet_ntop(AF_INET, &s->sin_addr, client_address_str, client_address_str_lenght);
 		} else { // AF_INET6
-            // IPv6 address
             struct sockaddr_in6* s = (struct sockaddr_in6*)&client_addr;
             inet_ntop(AF_INET6, &s->sin6_addr, client_address_str, client_address_str_lenght);
         }
@@ -248,19 +245,26 @@ int connectClient(int server_socket, char *client_address_str, int client_addres
 
 
 void getRequest(const char *client_address_str, FILE *file_ptr, char *thread_id_str) {
+	
     int API_socket_HTTP  = init_HTTP_client();
+	
+   openingFile(file_ptr);
    
-    //print IP address in log file
-    fputs("Thread ID: ", file_ptr);
-    fputs(thread_id_str, file_ptr);
-    fputs(" The IP address =",file_ptr);
-    fputs(client_address_str,file_ptr);
-    fputs("\n",file_ptr);
+   
+	fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
+	fprintf(file_ptr, "the client IP: %s\n", client_address_str );
+																  /*  //print IP address in log file
+																	fputs("Thread ID: ", file_ptr);
+																	fputs(thread_id_str, file_ptr);
+																	fputs(" The IP address =",file_ptr);
+																	fputs(client_address_str,file_ptr);
+																	fputs("\n",file_ptr);*/
+	fclose(file_ptr);
 
     char buffer[1000];
     char HTTPrequest[100] ={0};
 
-
+// http://ip-api.com/json/%s?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query
     sprintf(HTTPrequest, "GET /json/%s HTTP/1.0\r\nHost: ip-api.com\r\nConnection: close\r\n\r\n", client_address_str);
     printf("HTTP request = %s",HTTPrequest);
 
@@ -286,7 +290,8 @@ void getRequest(const char *client_address_str, FILE *file_ptr, char *thread_id_
     }
 	
  char* jsonFile = strchr(buffer,'{');
-
+	openingFile(file_ptr);
+	
     if( jsonFile == NULL){
         number_of_bytes_received = recv( API_socket_HTTP, buffer, ( sizeof buffer ) - 1, 0 );
         if( number_of_bytes_received == -1 )
@@ -299,28 +304,36 @@ void getRequest(const char *client_address_str, FILE *file_ptr, char *thread_id_
             printf("Received : %s\n", buffer );
         }
 
-        //put geolocation in file
-        fputs("Thread ID: ", file_ptr);
-        fputs(thread_id_str, file_ptr);
-        fputs("\tGeolocation = ",file_ptr);
-        fputs( buffer , file_ptr );
-        fputs("\n",file_ptr);
-    } else{
 
+
+	//fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
+	fprintf(file_ptr, "Location : %s\n", buffer);
+      /*  //put geolocation in file
+        fputs("Thread ID: ", file_ptr);
+        fputs(thread_id_str, file_ptr);
+        fputs("Geolocation = ",file_ptr);
+        fputs( buffer , file_ptr );
+        fputs("\n",file_ptr); */
+    } else{
+	//fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
+	fprintf(file_ptr, "Location : %s\n", buffer);
+	/*
         //put geolocation in file
         fputs("Thread ID: ", file_ptr);
         fputs(thread_id_str, file_ptr);
-        fputs("\tGeolocation = ",file_ptr);
+        fputs("Geolocation = ",file_ptr);
         fputs(jsonFile, file_ptr);
         fputs("\n",file_ptr);
+		*/
     }
 
+	fclose(file_ptr);
     //clean HTTP socket
     cleanup(API_socket_HTTP);
 }
 
 void sendData(int client_socket, FILE *file_ptr, char *client_address_str){	
-
+	openingFile(file_ptr);
 
     pthread_t thread_id = pthread_self();
     char thread_id_str[20];
@@ -340,11 +353,17 @@ void sendData(int client_socket, FILE *file_ptr, char *client_address_str){
     getRequest(client_address_str, file_ptr,thread_id_str);
 
     //put the message that the client sent in the log file
-    fputs("Thread ID: ", file_ptr);
-    fputs(thread_id_str, file_ptr);
-    fputs(" Client sent = ",file_ptr);
-    fputs(buffer, file_ptr);
-    fputs("\n",file_ptr);
+	//fprintf(file_ptr, "Thread ID: %s\n,",thread_id_str);
+	fprintf(file_ptr, "Client sent : %s", buffer);
+	
+	fclose(file_ptr);
+														  /* 
+															fputs("Thread ID: ", file_ptr);
+															fputs(thread_id_str, file_ptr);
+															fputs(" Client sent = ",file_ptr);
+															fputs(buffer, file_ptr);
+															fputs("\n",file_ptr); 
+															*/
     //Step 3.1
     int number_of_bytes_send = 0;
     int totalBytesSend = 0;
@@ -359,22 +378,27 @@ void sendData(int client_socket, FILE *file_ptr, char *client_address_str){
 		"Never gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you\nNever gonna give you up\nNever gonna let you down\n"
 		"Never gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you\n"
 		"Never gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\n"
-		"Never gonna say goodbye\nNever gonna tell a lie and hurt you\n", 534, 0);
+		"Never gonna say goodbye\nNever gonna tell a lie and hurt you\n", 517, 0);
 
         //check if client left and put number of bytes send in the log file
         if( number_of_bytes_send == -1 )
         {
             printf("Client left. I sent %d bytes\n",totalBytesSend);
-            sprintf(totalBytesSendStr, "%d", totalBytesSend);
-            fputs("Thread ID: ", file_ptr);
-            fputs(thread_id_str, file_ptr);
-            fputs(" Total bytes send = ",file_ptr);
-            fputs(totalBytesSendStr, file_ptr);
-            fputs("\n",file_ptr);
+         //   sprintf(totalBytesSendStr, "%d", totalBytesSend);
+		 openingFile(file_ptr);
+		fprintf(file_ptr,"Total bytes I've send to client : %d\n", totalBytesSend);
+		fclose(file_ptr);
+		/*
+															fputs("Thread ID: ", file_ptr);
+															fputs(thread_id_str, file_ptr);
+															fputs(" Total bytes send = ",file_ptr);
+															fputs(totalBytesSendStr, file_ptr);
+															fputs("\n\n",file_ptr);
+															*/
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
-            usleep(100000);// Just here to test or i wil attack myself to hard
+          //  usleep(100000);// Just here to test or i wil attack myself to hard
         }
     }
     cleanup(client_socket);
@@ -398,7 +422,7 @@ void* threadExecution(void* arg)
 
 void cleanup( int client_socket)
 {
-	int shutdown_return = shutdown( client_socket, SD_RECEIVE );
+	int shutdown_return = shutdown( client_socket, 0 );
 	if( shutdown_return == -1 )
 	{
 		perror( "shutdown" );
@@ -407,3 +431,16 @@ void cleanup( int client_socket)
 	close( client_socket );
 }
 
+int openingFile(FILE *filepointer)
+{
+	    FILE *file_ptr = fopen("log.log", "a");
+	if (file_ptr == NULL)
+	{
+		perror("error opening file\n");
+	return 1;
+	}
+	else
+	{
+	return 0;
+	}
+}
