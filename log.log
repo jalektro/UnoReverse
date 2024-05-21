@@ -1,10 +1,18 @@
-Thread ID: 1 The IP address =::ffff:127.0.0.1
-Thread ID: 1 Geolocation = {"status":"fail","message":"reserved range","query":"127.0.0.1"}
-Thread ID: 1 Client sent = hello
-Thread ID: 1 Total bytes send = 578
-Thread ID: 1 The IP address =::ffff:127.0.0.1
-Thread ID: 1	Geolocation = {"status":"fail","message":"reserved range","query":"127.0.0.1"}
-Thread ID: 1 The IP address =1
-Thread ID: 1	Geolocation = {"status":"fail","message":"invalid query","query":"1"}
-Thread ID: 1 Client sent = hello
-Thread ID: 1 Total bytes send = 36312
+*****************New thread ID*****************
+Thread ID: 261194069897632	the client IP: 84.195.19.206
+{"status":"success","country":"Belgium","countryCode":"BE","region":"VLG","regionName":"Flanders","city":"Lommel","zip":"3920","lat":51.2277,"lon":5.3128,"timezone":"Europe/Brussels","isp":"Telenet Operaties N.V.","org":"Telenet","as":"AS6848 Telenet BV","query":"84.195.19.206"}
+Client sent : heheoiee
+Total bytes I've send to client : 32571
+***********************************************
+*****************New thread ID*****************
+Thread ID: 257656352731552	the client IP: 84.195.19.206
+{"status":"success","country":"Belgium","countryCode":"BE","region":"VLG","regionName":"Flanders","city":"Lommel","zip":"3920","lat":51.2277,"lon":5.3128,"timezone":"Europe/Brussels","isp":"Telenet Operaties N.V.","org":"Telenet","as":"AS6848 Telenet BV","query":"84.195.19.206"}
+Client sent : heheoiee
+*****************New thread ID*****************
+Thread ID: 257656342245792	the client IP: 84.195.19.206
+{"status":"success","country":"Belgium","countryCode":"BE","region":"VLG","regionName":"Flanders","city":"Lommel","zip":"3920","lat":51.2277,"lon":5.3128,"timezone":"Europe/Brussels","isp":"Telenet Operaties N.V.","org":"Telenet","as":"AS6848 Telenet BV","query":"84.195.19.206"}
+Client sent : heheoiee
+Total bytes I've send to client : 43945
+***********************************************
+Total bytes I've send to client : 141141
+***********************************************

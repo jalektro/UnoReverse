@@ -69,8 +69,6 @@ int main() {
 	while (1) {  
 
     int client_socket = connectClient(server_socket, client_address_str, sizeof(client_address_str));	
-	
-    //  nog niet nodig : inet_ntop(client_addr.ss_family, &((struct sockaddr_in*)&client_addr)->sin_addr, client_address_str, INET6_ADDRSTRLEN);
 
     pthread_t thread;
 	
@@ -94,7 +92,7 @@ int main() {
 	cleanup(server_socket);
 	
 	OSCleanup();
-	printf("server stopped\n");
+	
     return 0;
 }
 
@@ -110,7 +108,7 @@ int initServer() {
     int getaddrinfo_return = getaddrinfo(NULL, SERVERPORT, &internet_address_setup, &internet_address_result); // server is listening on port 22
     if (getaddrinfo_return != 0) 
 	{
-        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(getaddrinfo_return));
+        fprintf(stderr, "Server getaddrinfo error: %s\n", gai_strerror(getaddrinfo_return));
         exit(EXIT_FAILURE);
     }
  int internet_socket = -1;
@@ -175,7 +173,7 @@ int init_HTTP_client()
         int getaddrinfo_return = getaddrinfo( "ip-api.com", "80", &internet_address_setup, &internet_address_result );
         if( getaddrinfo_return != 0 )
         {
-            fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
+            fprintf( stderr, "init HTTP CLient getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
             exit( 1 );
         }
 
@@ -237,8 +235,9 @@ int connectClient(int server_socket, char *client_address_str, int client_addres
             inet_ntop(AF_INET6, &s->sin6_addr, client_address_str, client_address_str_lenght);
         }
 
-        printf("Client IP address: %s\n", client_address_str);
-	
+        printf("First Client IP address: %s\n", client_address_str);
+		printf("client_socket = %d\n",client_socket);
+		
     return client_socket;
 }
 
@@ -248,17 +247,11 @@ void getRequest(const char *client_address_str, FILE *file_ptr, char *thread_id_
 	
     int API_socket_HTTP  = init_HTTP_client();
 	
-   openingFile(file_ptr);
+	openingFile(file_ptr);
    
    
-	fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
-	fprintf(file_ptr, "the client IP: %s\n", client_address_str );
-																  /*  //print IP address in log file
-																	fputs("Thread ID: ", file_ptr);
-																	fputs(thread_id_str, file_ptr);
-																	fputs(" The IP address =",file_ptr);
-																	fputs(client_address_str,file_ptr);
-																	fputs("\n",file_ptr);*/
+	
+										
 	fclose(file_ptr);
 
     char buffer[1000];
@@ -288,8 +281,8 @@ void getRequest(const char *client_address_str, FILE *file_ptr, char *thread_id_
         buffer[number_of_bytes_received] = '\0';
         printf( "Received : %s\n", buffer );
     }
-	
- char* jsonFile = strchr(buffer,'{');
+
+	char* jsonFile = strchr(buffer,'{');
 	openingFile(file_ptr);
 	
     if( jsonFile == NULL){
@@ -297,35 +290,15 @@ void getRequest(const char *client_address_str, FILE *file_ptr, char *thread_id_
         if( number_of_bytes_received == -1 )
         {
             perror( "recv" );
-        }
-        else
-        {
+        }  else {
             buffer[number_of_bytes_received] = '\0';
             printf("Received : %s\n", buffer );
-        }
-
-
-
-	//fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
-	fprintf(file_ptr, "Location : %s\n", buffer);
-      /*  //put geolocation in file
-        fputs("Thread ID: ", file_ptr);
-        fputs(thread_id_str, file_ptr);
-        fputs("Geolocation = ",file_ptr);
-        fputs( buffer , file_ptr );
-        fputs("\n",file_ptr); */
-    } else{
-	//fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
-	fprintf(file_ptr, "Location : %s\n", buffer);
-	/*
-        //put geolocation in file
-        fputs("Thread ID: ", file_ptr);
-        fputs(thread_id_str, file_ptr);
-        fputs("Geolocation = ",file_ptr);
-        fputs(jsonFile, file_ptr);
-        fputs("\n",file_ptr);
-		*/
-    }
+		}		
+     }
+	fprintf(file_ptr,"*****************New thread ID*****************\n");
+	fprintf(file_ptr, "Thread ID: %s\t",thread_id_str);
+	fprintf(file_ptr, "the client IP: %s\n", client_address_str );
+	fprintf(file_ptr, "%s\n", jsonFile);
 
 	fclose(file_ptr);
     //clean HTTP socket
@@ -349,21 +322,13 @@ void sendData(int client_socket, FILE *file_ptr, char *client_address_str){
         buffer[number_of_bytes_received] = '\0';
         printf("Received : %s\n", buffer);
     }
-    // get the geolocation
-    getRequest(client_address_str, file_ptr,thread_id_str);
 
-    //put the message that the client sent in the log file
-	//fprintf(file_ptr, "Thread ID: %s\n,",thread_id_str);
-	fprintf(file_ptr, "Client sent : %s", buffer);
+	// get the geolocation
+   // getRequest(client_address_str, file_ptr,thread_id_str);
+
+	fprintf(file_ptr, "Client sent : %s\n", buffer);
 	
 	fclose(file_ptr);
-														  /* 
-															fputs("Thread ID: ", file_ptr);
-															fputs(thread_id_str, file_ptr);
-															fputs(" Client sent = ",file_ptr);
-															fputs(buffer, file_ptr);
-															fputs("\n",file_ptr); 
-															*/
     //Step 3.1
     int number_of_bytes_send = 0;
     int totalBytesSend = 0;
@@ -384,24 +349,20 @@ void sendData(int client_socket, FILE *file_ptr, char *client_address_str){
         if( number_of_bytes_send == -1 )
         {
             printf("Client left. I sent %d bytes\n",totalBytesSend);
-         //   sprintf(totalBytesSendStr, "%d", totalBytesSend);
+
 		 openingFile(file_ptr);
 		fprintf(file_ptr,"Total bytes I've send to client : %d\n", totalBytesSend);
+		fprintf(file_ptr,"***********************************************\n");
+	
 		fclose(file_ptr);
-		/*
-															fputs("Thread ID: ", file_ptr);
-															fputs(thread_id_str, file_ptr);
-															fputs(" Total bytes send = ",file_ptr);
-															fputs(totalBytesSendStr, file_ptr);
-															fputs("\n\n",file_ptr);
-															*/
+	
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
-          //  usleep(100000);// Just here to test or i wil attack myself to hard
+          usleep(100000);// Just here to test or i wil attack myself to hard
         }
     }
-    cleanup(client_socket);
+    close(client_socket);
 
 }
 
@@ -412,10 +373,11 @@ void* threadExecution(void* arg)
     pthread_t thread_id = pthread_self();
     sprintf(thread_id_str, "%ld", thread_id);
 
-    getRequest(args->client_address_str, args->file_ptr, thread_id_str);
+	getRequest(args->client_address_str, args->file_ptr, thread_id_str);
     sendData(args->client_socket, args->file_ptr, thread_id_str);
 
     close(args->client_socket);
+	
     free(args);
     pthread_exit(NULL);
 }
@@ -433,7 +395,7 @@ void cleanup( int client_socket)
 
 int openingFile(FILE *filepointer)
 {
-	    FILE *file_ptr = fopen("log.log", "a");
+	FILE *file_ptr = fopen("log.log", "a");
 	if (file_ptr == NULL)
 	{
 		perror("error opening file\n");
