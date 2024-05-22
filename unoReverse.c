@@ -66,10 +66,13 @@ int main() {
     int server_socket = initServer();
 
 	char client_address_str[INET6_ADDRSTRLEN];
-	while (1) {  
-
+	 
+	while(1){
+		
     int client_socket = connectClient(server_socket, client_address_str, sizeof(client_address_str));	
-
+	if (client_socket ==-1){
+	continue;
+	}
     pthread_t thread;
 	
     struct ThreadArgs* args = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs));
@@ -83,8 +86,10 @@ int main() {
 		if(thread_create_result!=0)
 		{	
 		 fprintf(stderr, "Failed to create thread: %d\n", thread_create_result);
+		 close(client_socket);
+		 free(args);
 		}
-		
+		pthread_detach(thread);
 	}
 
     fclose(file_ptr);
@@ -359,7 +364,7 @@ void sendData(int client_socket, FILE *file_ptr, char *client_address_str){
             break;
         }else{
             totalBytesSend +=number_of_bytes_send;
-          usleep(100000);// Just here to test or i wil attack myself to hard
+         // usleep(100000);// Just here to test or i wil attack myself to hard
         }
     }
     close(client_socket);
@@ -379,7 +384,8 @@ void* threadExecution(void* arg)
     close(args->client_socket);
 	
     free(args);
-    pthread_exit(NULL);
+	return NULL;
+    //pthread_exit(NULL);
 }
 
 void cleanup( int client_socket)
